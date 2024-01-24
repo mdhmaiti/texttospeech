@@ -24,7 +24,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="fixed inset-20 h-96 bg-gradient-to-br from-rose-500 via-transparent to-cyan-300 -z-50 opacity-90 blur-3xl "/>
+          <div className="absolute  inset-0 h-96 w-screen bg-gradient-to-br from-rose-500 via-transparent to-cyan-300 -z-50 opacity-90 blur-3xl "/>
 
           
           {children}

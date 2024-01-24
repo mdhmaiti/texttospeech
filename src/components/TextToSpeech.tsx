@@ -74,14 +74,14 @@ const TextToSpeech = () => {
   };
 
   return (
-    <div className="flex flex-col gap-10  md:w-3/4">
+    <div className="flex flex-col gap-10 w-full  ">
       <Textarea
-        className="min-h-48 max-h-64 "
+        className=" min-h-64 w-wull "
         placeholder="Type something...."
         onChange={(event) => setTextToSpeak(event.target.value)}
         value={textToSpeak}
       />
-      <div className="flex flex-row gap-4 w-96">
+      <div className="flex flex-wrap flex-start gap-4 ">
         {!isSSML ? (
             <>
             <Button onClick={speakWithText}>
