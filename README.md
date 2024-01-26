@@ -244,15 +244,5 @@ export default useApiText;
 
 ```
 
-## using the google cloud api try to implement the following
 
-* Speechify Functional Screen
- *
- * At Speechify, we provide a unique Listening Experience to help people read better. This experience
- * plays synthesized speech for them to listen to and shows visual feedback to help them
- * follow along.
- *
- * In this task, you will implement a very simple version of this kind of experience. You will use a "mock" TTS Engine
- * that provides "progress" events indicating a position in the content, and you will print the word and sentence surrounding
- * that position.
- *
+ 
