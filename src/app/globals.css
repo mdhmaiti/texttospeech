@@ -70,8 +70,14 @@
 
   .highlighted-word {
     background-color: yellow;
+   
   }
-  
+
+  .highlighted-sentence {
+    background-color: lime;
+   
+    
+  }
   /* Add this CSS to highlight the current word */
   textarea::selection {
     background-color: lime;
