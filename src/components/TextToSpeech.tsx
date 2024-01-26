@@ -6,15 +6,28 @@ import { Button } from "./ui/button";
 import { ToggleLD } from "./ToggleLD";
 
 const TextToSpeech = () => {
+ 
   const [isPlaying, setIsPlaying] = useState(false);
   const [isSSML, setIsSSML] = useState(false);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const [textToSpeak, setTextToSpeak] = useState("");
 
+  const [highlightedRange, setHighlightedRange] = useState({ start: -1, end: -1 });
+
+ 
+  const updateHighlightedRange = (start:any, end:any) => {
+    setHighlightedRange({ start, end });
+  };
+
+  const resetHighlightedRange = () => {
+    setHighlightedRange({ start: -1, end: -1 });
+  };
+
   const initializeUtterance = () => {
     const speechSynthesis = (window as any).speechSynthesis;
     const utterance = new SpeechSynthesisUtterance();
     utteranceRef.current = utterance;
+    resetHighlightedRange();
 
     utterance.onend = () => {
       setIsPlaying(false);
@@ -35,9 +48,13 @@ const TextToSpeech = () => {
 
       setIsPlaying(true);
       setIsSSML(true);
+      resetHighlightedRange();
     }
   };
-
+  utteranceRef.current?.addEventListener("boundary", (event) => {
+    // Update the highlighted range when the speech reaches a word boundary
+    updateHighlightedRange(event.charIndex, event.charIndex + event.charLength);
+  });
   const resumePauseSpeech = () => {
     if (!isPlaying) {
       window.speechSynthesis.resume();
@@ -81,6 +98,16 @@ const TextToSpeech = () => {
         onChange={(event) => setTextToSpeak(event.target.value)}
         value={textToSpeak}
       />
+   <div>
+        {textToSpeak.split('').map((char, index) => (
+          <span
+            key={index}
+            className={index >= highlightedRange.start && index < highlightedRange.end ? "highlighted-word" : ""}
+          >
+            {char}
+          </span>
+        ))}
+      </div>
       <div className="flex flex-wrap flex-start gap-4 ">
         {!isSSML ? (
             <>
