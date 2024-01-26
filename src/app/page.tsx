@@ -1,7 +1,5 @@
 import TextToSpeech from "@/components/TextToSpeech";
-import TextToSpeechWH from "@/components/TextToSpeechWH";
 
-import Image from "next/image";
 
 export default function Home() {
   return (

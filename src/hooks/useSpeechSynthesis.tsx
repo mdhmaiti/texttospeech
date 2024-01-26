@@ -1,11 +1,61 @@
 "use client"
 import { useState, useRef } from "react";
+import useApiText from "./useApitText";
 
 const useSpeechSynthesis = () => {
   type SpeechState = "idle" | "playing"; // it tells if to render the speak fetch or the play/ pause button
   const [speechState, setSpeechState] = useState<SpeechState>("idle"); // motnitors the triggers of speech utterence
   const [isPlaying, setIsPlaying] = useState<boolean>(false); // to pause play state;
   const utterenceRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  const { textToSpeak } = useApiText();
+
+  const [highlightedRange, setHighlightedRange] = useState({
+    start: -1,
+    end: -1,
+  });
+  const [highlightedRangeS, setHighlightedRangeS] = useState({
+    start: -1,
+    end: -1,
+  });
+
+  const updateHighlightedRange = (start: any, end: any) => {
+    setHighlightedRange({ start, end });
+  };
+
+  const updateHighlightedRangeS = (start: any, end: any) => {
+    const text = textToSpeak;
+    const sentenceDelimiter = "." || "?" || "!";
+
+    let sentenceStart = start;
+    let sentenceEnd = end;
+
+    // Find the start of the current sentence
+    while (sentenceStart > -1 && text[sentenceStart] !== sentenceDelimiter) {
+      sentenceStart--;
+    }
+
+    // Find the end of the current sentence
+    while (
+      sentenceEnd < text.length &&
+      text[sentenceEnd] !== sentenceDelimiter
+    ) {
+      sentenceEnd++;
+    }
+
+    // Highlight the current sentence
+    setHighlightedRangeS({ start: sentenceStart , end: sentenceEnd });
+  };
+  const resetHighlightedRangeS = () => {
+    setHighlightedRange({ start: -1, end: -1 });
+  };
+
+  ///
+
+  const resetHighlightedRange = () => {
+    setHighlightedRange({ start: -1, end: -1 });
+  };
+
  
   // note: the stop will contain both the isSSML state and the is Playing state as when i press the stop it should
 
@@ -21,6 +71,8 @@ const useSpeechSynthesis = () => {
     utterenceRef.current.onend = () => {
       setIsPlaying(false);
       setSpeechState("idle");
+      resetHighlightedRange();
+      resetHighlightedRangeS();
     
     };
 
@@ -29,6 +81,8 @@ const useSpeechSynthesis = () => {
     // changing the state for the playing using the global speech
     speechSynthesis.addEventListener("end", () => {
       setIsPlaying(false);
+      resetHighlightedRange();
+      resetHighlightedRangeS();
     });
   };
 };
@@ -67,11 +121,25 @@ const resumePauseSpeech =()=>{
         (window as any).speechSynthesis.speak(utterenceRef.current);
         setIsPlaying(true);
         setSpeechState("playing");
+        resetHighlightedRange();
+        resetHighlightedRangeS();
 
       }
-    }
 
-    return { isPlaying, speechState,speakWithText,stopSpeech,resumePauseSpeech}
+      
+    }
+    utterenceRef.current?.addEventListener("boundary", (event) => {
+      // Update the highlighted range when the speech reaches a word boundary
+      updateHighlightedRange(event.charIndex, event.charIndex + event.charLength);
+      updateHighlightedRangeS(
+        event.charIndex,
+        event.charIndex + event.charLength
+      );
+    });
+
+    
+
+    return { isPlaying, speechState,highlightedRange,highlightedRangeS,speakWithText,stopSpeech,resumePauseSpeech}
 };
 export default useSpeechSynthesis;
 

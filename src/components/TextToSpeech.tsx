@@ -10,6 +10,7 @@ const TextToSpeech = () => {
   const [isSSML, setIsSSML] = useState(false);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const [textToSpeak, setTextToSpeak] = useState("");
+  const [selectedVoice, setSelectedVoice] = useState<string | null>(null);
 
   const [highlightedRange, setHighlightedRange] = useState({
     start: -1,
@@ -79,8 +80,22 @@ const TextToSpeech = () => {
 
   const speakWithText = () => {
     if (!isPlaying) {
+      stopSpeech();
+    
+
+      // Re-initialize the utterance with the new voice
       initializeUtterance();
       utteranceRef.current!.text = textToSpeak;
+      utteranceRef.current!.text = textToSpeak;
+      if (selectedVoice) {
+        const selectedVoiceObject = speechSynthesis
+          .getVoices()
+          .find((voice) => voice.name === selectedVoice);
+        utteranceRef.current!.voice = selectedVoiceObject as SpeechSynthesisVoice | null;;
+      }
+
+
+      
       (window as any).speechSynthesis.speak(utteranceRef.current);
 
       setIsPlaying(true);
@@ -89,6 +104,17 @@ const TextToSpeech = () => {
       resetHighlightedRangeS();
     }
   };
+
+
+  utteranceRef.current?.addEventListener("start", () => {
+    // Reset the highlighted range when speech starts
+    resetHighlightedRange();
+  });
+  
+  utteranceRef.current?.addEventListener("end", () => {
+    // Reset the highlighted range when speech ends
+    resetHighlightedRange();
+  });
   utteranceRef.current?.addEventListener("boundary", (event) => {
     // Update the highlighted range when the speech reaches a word boundary
     updateHighlightedRange(event.charIndex, event.charIndex + event.charLength);
@@ -175,6 +201,19 @@ const TextToSpeech = () => {
       
 
       <div className="flex flex-wrap flex-start gap-4 ">
+
+      <select
+        value={selectedVoice|| ""}
+        onChange={(e) => setSelectedVoice(e.target.value)}
+        className="p-2 border rounded-md appearance-none"
+      >
+        <option value="">Default Voice</option>
+        {speechSynthesis.getVoices().map((voice) => (
+          <option key={voice.name} value={voice.name}>
+            {voice.name}
+          </option>
+        ))}
+      </select>
         {!isSSML ? (
           <>
             <Button onClick={speakWithText}>
