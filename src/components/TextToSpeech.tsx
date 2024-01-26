@@ -1,9 +1,10 @@
 // src/components/TextToSpeech.js
 "use client";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
 import { ToggleLD } from "./ToggleLD";
+
 
 const TextToSpeech = () => {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -11,6 +12,9 @@ const TextToSpeech = () => {
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const [textToSpeak, setTextToSpeak] = useState("");
   const [selectedVoice, setSelectedVoice] = useState<string | null>(null);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  
+
 
   const [highlightedRange, setHighlightedRange] = useState({
     start: -1,
@@ -163,6 +167,34 @@ const TextToSpeech = () => {
     }
   };
 
+  useEffect(() => {
+    const updateVoices = () => {
+      const availableVoices = speechSynthesis.getVoices();
+      setVoices(availableVoices);
+      // Update selectedVoice only if it's null or the current selected voice is no longer available
+      if (!selectedVoice || !availableVoices.find(voice => voice.name === selectedVoice)) {
+        setSelectedVoice(availableVoices.length > 0 ? availableVoices[0].name : null);
+      }
+    };
+  
+    // Fetch voices when the component mounts
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      updateVoices();
+    }
+  
+    // Add an event listener to update voices when they change
+    const voicesChanged = () => {
+      updateVoices();
+    };
+  
+    speechSynthesis.addEventListener('voiceschanged', voicesChanged);
+  
+    // Clean up the event listener on component unmount
+    return () => {
+      speechSynthesis.removeEventListener('voiceschanged', voicesChanged);
+    };
+  }, [selectedVoice]);
+
   return (
     <div className="flex flex-col gap-10 w-full  ">
       <Textarea
@@ -171,6 +203,8 @@ const TextToSpeech = () => {
         onChange={(event) => setTextToSpeak(event.target.value)}
         value={textToSpeak}
       />
+      
+      
       <div className="">
         <div className="max-w-full max-h-96 hover:overflow-y-scroll overflow-hidden  ">
           {textToSpeak.split('').map((char, index) => (
@@ -203,17 +237,18 @@ const TextToSpeech = () => {
       <div className="flex flex-wrap flex-start gap-4 ">
 
       <select
-        value={selectedVoice|| ""}
-        onChange={(e) => setSelectedVoice(e.target.value)}
-        className="p-2 border rounded-md appearance-none"
-      >
-        <option value="">Default Voice</option>
-        {speechSynthesis.getVoices().map((voice) => (
-          <option key={voice.name} value={voice.name}>
-            {voice.name}
-          </option>
-        ))}
-      </select>
+          value={selectedVoice || ""}
+          onChange={(e) => setSelectedVoice(e.target.value)}
+          className="p-2 border rounded-md appearance-none"
+          disabled={voices.length === 0}
+        >
+          <option value="">Default Voice</option>
+          {voices.map((voice) => (
+            <option key={voice.name} value={voice.name}>
+              {voice.name}
+            </option>
+          ))}
+        </select>
         {!isSSML ? (
           <>
             <Button onClick={speakWithText}>
