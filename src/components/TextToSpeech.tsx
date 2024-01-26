@@ -5,7 +5,6 @@ import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
 import { ToggleLD } from "./ToggleLD";
 
-
 const TextToSpeech = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isSSML, setIsSSML] = useState(false);
@@ -13,8 +12,10 @@ const TextToSpeech = () => {
   const [textToSpeak, setTextToSpeak] = useState("");
   const [selectedVoice, setSelectedVoice] = useState<string | null>(null);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [speed, setSpeed] = useState(1);
   
-
+  
+  
 
   const [highlightedRange, setHighlightedRange] = useState({
     start: -1,
@@ -50,7 +51,7 @@ const TextToSpeech = () => {
     }
 
     // Highlight the current sentence
-    setHighlightedRangeS({ start: sentenceStart , end: sentenceEnd });
+    setHighlightedRangeS({ start: sentenceStart, end: sentenceEnd });
   };
   const resetHighlightedRangeS = () => {
     setHighlightedRange({ start: -1, end: -1 });
@@ -66,7 +67,7 @@ const TextToSpeech = () => {
     const speechSynthesis = (window as any).speechSynthesis;
     const utterance = new SpeechSynthesisUtterance();
     utteranceRef.current = utterance;
-   
+
     utterance.onend = () => {
       setIsPlaying(false);
       setIsSSML(false);
@@ -85,21 +86,22 @@ const TextToSpeech = () => {
   const speakWithText = () => {
     if (!isPlaying) {
       stopSpeech();
-    
 
       // Re-initialize the utterance with the new voice
       initializeUtterance();
       utteranceRef.current!.text = textToSpeak;
-      utteranceRef.current!.text = textToSpeak;
+      utteranceRef.current!.rate = speed; 
+      
+     
+     
       if (selectedVoice) {
         const selectedVoiceObject = speechSynthesis
           .getVoices()
           .find((voice) => voice.name === selectedVoice);
-        utteranceRef.current!.voice = selectedVoiceObject as SpeechSynthesisVoice | null;;
+        utteranceRef.current!.voice =
+          selectedVoiceObject as SpeechSynthesisVoice | null;
       }
 
-
-      
       (window as any).speechSynthesis.speak(utteranceRef.current);
 
       setIsPlaying(true);
@@ -109,12 +111,11 @@ const TextToSpeech = () => {
     }
   };
 
-
   utteranceRef.current?.addEventListener("start", () => {
     // Reset the highlighted range when speech starts
     resetHighlightedRange();
   });
-  
+
   utteranceRef.current?.addEventListener("end", () => {
     // Reset the highlighted range when speech ends
     resetHighlightedRange();
@@ -172,26 +173,31 @@ const TextToSpeech = () => {
       const availableVoices = speechSynthesis.getVoices();
       setVoices(availableVoices);
       // Update selectedVoice only if it's null or the current selected voice is no longer available
-      if (!selectedVoice || !availableVoices.find(voice => voice.name === selectedVoice)) {
-        setSelectedVoice(availableVoices.length > 0 ? availableVoices[0].name : null);
+      if (
+        !selectedVoice ||
+        !availableVoices.find((voice) => voice.name === selectedVoice)
+      ) {
+        setSelectedVoice(
+          availableVoices.length > 0 ? availableVoices[0].name : null
+        );
       }
     };
-  
+
     // Fetch voices when the component mounts
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
       updateVoices();
     }
-  
+
     // Add an event listener to update voices when they change
     const voicesChanged = () => {
       updateVoices();
     };
-  
-    speechSynthesis.addEventListener('voiceschanged', voicesChanged);
-  
+
+    speechSynthesis.addEventListener("voiceschanged", voicesChanged);
+
     // Clean up the event listener on component unmount
     return () => {
-      speechSynthesis.removeEventListener('voiceschanged', voicesChanged);
+      speechSynthesis.removeEventListener("voiceschanged", voicesChanged);
     };
   }, [selectedVoice]);
 
@@ -203,40 +209,33 @@ const TextToSpeech = () => {
         onChange={(event) => setTextToSpeak(event.target.value)}
         value={textToSpeak}
       />
-      
-      
+
       <div className="">
         <div className="max-w-full max-h-96 hover:overflow-y-scroll overflow-hidden  ">
-          {textToSpeak.split('').map((char, index) => (
+          {textToSpeak.split("").map((char, index) => (
             <span key={index} className=" ">
-               <span
-              
-              className={  `  ${ index >= highlightedRange.start && index < highlightedRange.end
-                ? "bg-rose-400"
-                : ""}   ${
-                  index >= highlightedRangeS.start+1 && index < highlightedRangeS.end
+              <span
+                className={`  ${
+                  index >= highlightedRange.start &&
+                  index < highlightedRange.end
+                    ? "bg-rose-400"
+                    : ""
+                }   ${
+                  index >= highlightedRangeS.start + 1 &&
+                  index < highlightedRangeS.end
                     ? "bg-lime-500 "
                     : ""
-                }` 
-               
-              }
-            >
-               {char}
+                }`}
+              >
+                {char}
+              </span>
             </span>
-         
-
-            </span>
-           
-            
           ))}
         </div>
-       
       </div>
-      
 
       <div className="flex flex-wrap flex-start gap-4 ">
-
-      <select
+        <select
           value={selectedVoice || ""}
           onChange={(e) => setSelectedVoice(e.target.value)}
           className="p-2 border rounded-md appearance-none"
@@ -268,6 +267,27 @@ const TextToSpeech = () => {
           Stop
         </Button>
         <ToggleLD />
+        <label htmlFor="speedRange" className="flex items-center">
+          Speed:
+          <input
+            id="speedRange"
+            type="range"
+            min="0.1"
+            max="3"
+            step="0.1"
+            value={speed}
+            onChange={(e) => {
+              setSpeed(parseFloat(e.target.value));
+              if (utteranceRef.current) {
+                utteranceRef.current.rate = parseFloat(e.target.value);
+              }
+            }}
+          />
+          {speed.toFixed(1)}
+        </label>
+         
+      
+        
       </div>
     </div>
   );
